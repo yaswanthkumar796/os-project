@@ -1,0 +1,27 @@
+def fifo_page_replacement(pages, capacity):
+    frame = []
+    page_faults = 0
+
+    print("Step-by-Step Frame State:")
+    for i, page in enumerate(pages):
+        if page not in frame:
+            if len(frame) < capacity:
+                frame.append(page)
+            else:
+                frame.pop(0)
+                frame.append(page)
+            page_faults += 1
+            status = "Miss (No change)"
+        else:
+            status = "Hit"
+
+        print(f"Step {i + 1}: {frame}  --> {status}")
+        print("Swap Space: []\n")
+
+    print(f"Total Page Faults: {page_faults}")
+
+# Taking user input
+capacity = int(input("Enter the number of frames: "))
+pages = list(map(int, input("Enter the CPU string (space-separated): ").split()))
+
+fifo_page_replacement(pages, capacity)
