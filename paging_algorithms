@@ -69,3 +69,42 @@ def lru_page_replacement(pages, capacity):
     step_result.append(f"\nSwap Memory (Removed Pages): {removed_pages}")
 
     return "\n".join(step_result), page_faults, page_hits, hit_ratio, miss_ratio, removed_pages
+
+
+# Optimal Page Replacement
+def optimal_page_replacement(pages, capacity):
+    frame = []
+    page_faults = 0
+    page_hits = 0
+    step_result = []
+    removed_pages = []
+
+    for i, page in enumerate(pages):
+        if page not in frame:
+            if len(frame) < capacity:
+                frame.append(page)
+            else:
+                future_use = {p: pages[i:].index(p) if p in pages[i:] else float('inf') for p in frame}
+                replace_page = max(future_use, key=future_use.get)
+                frame.remove(replace_page)
+                removed_pages.append(replace_page)
+                frame.append(page)
+            page_faults += 1
+            status = "Miss"
+        else:
+            page_hits += 1
+            status = "Hit"
+
+        step_result.append(f"Step {i + 1}: {frame}  --> {status}")
+
+    hit_ratio = page_hits / len(pages)
+    miss_ratio = page_faults / len(pages)
+
+    step_result.append(f"\nTotal Page Faults: {page_faults}")
+    step_result.append(f"\nTotal Hits: {page_hits}")
+    step_result.append(f"\nHit Ratio: {hit_ratio:.2f}")
+    step_result.append(f"\nMiss Ratio: {miss_ratio:.2f}")
+    step_result.append(f"\nSwap Memory (Removed Pages): {removed_pages}")
+
+    return "\n".join(step_result), page_faults, page_hits, hit_ratio, miss_ratio, removed_pages
+
