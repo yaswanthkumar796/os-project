@@ -108,3 +108,64 @@ def optimal_page_replacement(pages, capacity):
 
     return "\n".join(step_result), page_faults, page_hits, hit_ratio, miss_ratio, removed_pages
 
+
+def random_page_replacement(pages, capacity):
+    frame = []
+    page_faults = 0
+    page_hits = 0
+    step_result = []
+    removed_pages = []
+
+    for i, page in enumerate(pages):
+        if page not in frame:
+            if len(frame) < capacity:
+                frame.append(page)
+            else:
+                removed_page = frame.pop(random.randint(0, len(frame) - 1))
+                removed_pages.append(removed_page)
+                frame.append(page)
+            page_faults += 1
+            status = "Miss"
+        else:
+            page_hits += 1
+            status = "Hit"
+
+        step_result.append(f"Step {i + 1}: {frame}  --> {status}")
+
+    hit_ratio = page_hits / len(pages)
+    miss_ratio = page_faults / len(pages)
+
+    step_result.append(f"\nTotal Page Faults: {page_faults}")
+    step_result.append(f"\nTotal Hits: {page_hits}")
+    step_result.append(f"\nHit Ratio: {hit_ratio:.2f}")
+    step_result.append(f"\nMiss Ratio: {miss_ratio:.2f}")
+    step_result.append(f"\nSwap Memory (Removed Pages): {removed_pages}")
+
+    return "\n".join(step_result), page_faults, page_hits, hit_ratio, miss_ratio, removed_pages
+
+# Run selected algorithm
+def run_algorithm():
+    try:
+        capacity = int(capacity_entry.get())
+        pages = list(map(int, pages_entry.get().split()))
+        selected_algo = algo_var.get()
+
+        algo_functions = {
+            "FIFO": fifo_page_replacement,
+            "LRU": lru_page_replacement,
+            "Optimal": optimal_page_replacement,
+            "Random": random_page_replacement
+        }
+
+        if selected_algo not in algo_functions:
+            messagebox.showerror("Error", "Invalid Algorithm Selected")
+            return
+
+        result, _, _, _, _, _ = algo_functions[selected_algo](pages, capacity)
+
+        output_text.delete(1.0, tk.END)
+        output_text.insert(tk.END, result)
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter valid inputs!")
+
+
