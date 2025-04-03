@@ -168,4 +168,167 @@ def run_algorithm():
     except ValueError:
         messagebox.showerror("Input Error", "Please enter valid inputs!")
 
+def compare_algorithms():
+    try:
+        capacity = int(capacity_entry.get())
+        pages = list(map(int, pages_entry.get().split()))
+
+        results = {
+            "FIFO": fifo_page_replacement(pages, capacity)[1],
+            "LRU": lru_page_replacement(pages, capacity)[1],
+            "Optimal": optimal_page_replacement(pages, capacity)[1],
+            "Random": random_page_replacement(pages, capacity)[1]
+        }
+
+        hits = {
+            "FIFO": fifo_page_replacement(pages, capacity)[2],
+            "LRU": lru_page_replacement(pages, capacity)[2],
+            "Optimal": optimal_page_replacement(pages, capacity)[2],
+            "Random": random_page_replacement(pages, capacity)[2]
+        }
+
+        hit_ratios = {
+            "FIFO": fifo_page_replacement(pages, capacity)[3],
+            "LRU": lru_page_replacement(pages, capacity)[3],
+            "Optimal": optimal_page_replacement(pages, capacity)[3],
+            "Random": random_page_replacement(pages, capacity)[3]
+        }
+
+        miss_ratios = {
+            "FIFO": fifo_page_replacement(pages, capacity)[4],
+            "LRU": lru_page_replacement(pages, capacity)[4],
+            "Optimal": optimal_page_replacement(pages, capacity)[4],
+            "Random": random_page_replacement(pages, capacity)[4]
+        }
+
+        # Create a new window for comparison
+        compare_window = tk.Toplevel(root)
+        compare_window.title("Algorithm Comparison")
+        compare_window.geometry("800x600")
+
+        # Determine the best algorithm based on hit ratio
+        best_algo = max(hit_ratios, key=hit_ratios.get)
+        best_hit_ratio = hit_ratios[best_algo]
+        best_miss_ratio = miss_ratios[best_algo]
+
+        # Display the best algorithm
+        best_label = ttk.Label(compare_window, text=f"Best Algorithm: {best_algo} (Hit Ratio: {best_hit_ratio:.2f}, Miss Ratio: {best_miss_ratio:.2f})", font=('Helvetica', 12, 'bold'))
+        best_label.pack(pady=10)
+
+        # Create a frame for the table
+        table_frame = ttk.Frame(compare_window)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Add data table
+        tree = ttk.Treeview(table_frame)
+        tree["columns"] = ("Algorithm", "Page Faults", "Hits", "Hit Ratio", "Miss Ratio")
+        tree.column("#0", width=0, stretch=tk.NO)
+        tree.column("Algorithm", anchor=tk.W, width=120)
+        tree.column("Page Faults", anchor=tk.CENTER, width=120)
+        tree.column("Hits", anchor=tk.CENTER, width=120)
+        tree.column("Hit Ratio", anchor=tk.CENTER, width=120)
+        tree.column("Miss Ratio", anchor=tk.CENTER, width=120)
+
+        tree.heading("Algorithm", text="Algorithm", anchor=tk.W)
+        tree.heading("Page Faults", text="Page Faults", anchor=tk.CENTER)
+        tree.heading("Hits", text="Hits", anchor=tk.CENTER)
+        tree.heading("Hit Ratio", text="Hit Ratio", anchor=tk.CENTER)
+        tree.heading("Miss Ratio", text="Miss Ratio", anchor=tk.CENTER)
+
+        for algo in results:
+            hit_ratio = hits[algo] / len(pages)
+            miss_ratio = results[algo] / len(pages)
+            tree.insert("", tk.END, values=(algo, results[algo], hits[algo], f"{hit_ratio:.2f}", f"{miss_ratio:.2f}"))
+
+        tree.pack(fill=tk.BOTH, expand=True, pady=20)
+
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter valid inputs!")
+
+# Show Graphs in a new window
+def show_graphs():
+    try:
+        capacity = int(capacity_entry.get())
+        pages = list(map(int, pages_entry.get().split()))
+        selected_algo = algo_var.get()
+
+        algo_functions = {
+            "FIFO": fifo_page_replacement,
+            "LRU": lru_page_replacement,
+            "Optimal": optimal_page_replacement,
+            "Random": random_page_replacement
+        }
+
+        if selected_algo not in algo_functions:
+            messagebox.showerror("Error", "Invalid Algorithm Selected")
+            return
+
+        results = {
+            "FIFO": fifo_page_replacement(pages, capacity)[1],
+            "LRU": lru_page_replacement(pages, capacity)[1],
+            "Optimal": optimal_page_replacement(pages, capacity)[1],
+            "Random": random_page_replacement(pages, capacity)[1]
+        }
+
+        hits = {
+            "FIFO": fifo_page_replacement(pages, capacity)[2],
+            "LRU": lru_page_replacement(pages, capacity)[2],
+            "Optimal": optimal_page_replacement(pages, capacity)[2],
+            "Random": random_page_replacement(pages, capacity)[2]
+        }
+
+        hit_ratios = {
+            "FIFO": fifo_page_replacement(pages, capacity)[3],
+            "LRU": lru_page_replacement(pages, capacity)[3],
+            "Optimal": optimal_page_replacement(pages, capacity)[3],
+            "Random": random_page_replacement(pages, capacity)[3]
+        }
+
+        miss_ratios = {
+            "FIFO": fifo_page_replacement(pages, capacity)[4],
+            "LRU": lru_page_replacement(pages, capacity)[4],
+            "Optimal": optimal_page_replacement(pages, capacity)[4],
+            "Random": random_page_replacement(pages, capacity)[4]
+        }
+
+        graph_window = tk.Toplevel(root)
+        graph_window.title("Performance Graphs")
+        graph_window.geometry("800x600")
+
+        graph_frame = ttk.Frame(graph_window)
+        graph_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        fig = plt.Figure(figsize=(6, 4), dpi=100)
+        ax = fig.add_subplot(111)
+
+        df = pd.DataFrame({
+            'Algorithm': list(results.keys()),
+            'Page Faults': list(results.values()),
+            'Hits': list(hits.values()),
+            'Hit Ratio': list(hit_ratios.values()),
+            'Miss Ratio': list(miss_ratios.values())
+        })
+
+        df.plot(kind='bar', x='Algorithm', y=['Page Faults', 'Hits', 'Hit Ratio', 'Miss Ratio'], ax=ax, color=['#FF6B6B', '#4ECDC4', '#FFD700', '#FF4500'])
+        ax.set_title('Algorithm Performance Comparison')
+        ax.set_ylabel('Count / Ratio')
+        ax.legend(loc='best')  # Add legend
+        ax.grid(True, linestyle='--', alpha=0.7)  # Add grid
+
+        canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        def save_graph():
+            file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
+            if file_path:
+                fig.savefig(file_path)
+                messagebox.showinfo("Success", "Graph saved successfully!")
+
+        download_button = ttk.Button(graph_frame, text="Download Graph", command=save_graph)
+        download_button.pack(pady=10)
+
+    except ValueError:
+        messagebox.showerror("Input Error", "Please enter valid inputs!")
+
 
