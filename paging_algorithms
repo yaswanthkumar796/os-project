@@ -331,4 +331,23 @@ def show_graphs():
     except ValueError:
         messagebox.showerror("Input Error", "Please enter valid inputs!")
 
+# Clear input fields
+def clear_fields():
+    capacity_entry.delete(0, tk.END)
+    pages_entry.delete(0, tk.END)
+    output_text.delete(1.0, tk.END)
+    hit_miss_text.delete(1.0, tk.END)
+    hit_miss_text.insert(tk.END, "HIT RATIO: N/A, MISS RATIO: N/A")
+    swap_memory_text.delete(1.0, tk.END)
+    swap_memory_text.insert(tk.END, "SWAP MEMORY: N/A")
+
+# Generate Random Page Reference String
+def generate_random_pages():
+    try:
+        length = int(random_length_entry.get())
+        random_pages = [random.randint(0, 9) for _ in range(length)]
+        pages_entry.delete(0, tk.END)
+        pages_entry.insert(0, " ".join(map(str, random_pages)))
+    except ValueError:
+        messagebox.showerror("Input Error", "Enter valid length!")
 
