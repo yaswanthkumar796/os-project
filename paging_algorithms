@@ -351,3 +351,43 @@ def generate_random_pages():
     except ValueError:
         messagebox.showerror("Input Error", "Enter valid length!")
 
+
+# GUI setup
+root = tk.Tk()
+root.title("Paging Algorithm Simulator")
+root.geometry("1100x750")
+root.configure(bg="#1A1A2E")  # Dark navy background
+
+# Custom style for widgets
+style = ttk.Style()
+style.theme_use("clam")
+
+# Custom colors
+bg_color = "#1A1A2E"
+frame_color = "#16213E"
+button_color = "#0F3460"
+accent_color = "#E94560"
+text_color = "#FFFFFF"
+highlight_color = "#533483"
+
+# Configure styles for all widgets
+style.configure('.', background=bg_color)
+style.configure('TFrame', background=bg_color)
+style.configure('TLabel', background=bg_color, foreground=text_color, font=('Helvetica', 10, 'bold'))
+style.configure('TLabelframe', background=bg_color, foreground=accent_color, bordercolor=accent_color)
+style.configure('TLabelframe.Label', background=bg_color, foreground=accent_color)
+style.configure('TButton', font=('Helvetica', 10, 'bold'), padding=8,
+                background=button_color, foreground=text_color,
+                bordercolor=accent_color, focuscolor=button_color)
+style.configure('TEntry', font=('Helvetica', 10), padding=8,
+                fieldbackground="#2A2A4E", foreground=text_color,
+                insertcolor=text_color, bordercolor=accent_color)
+style.configure('TCombobox', font=('Helvetica', 10), padding=5,
+                fieldbackground="#2A2A4E", foreground=text_color,
+                selectbackground=highlight_color)
+style.map('TButton', background=[('active', highlight_color)])
+
+# Main container
+main_frame = ttk.Frame(root)
+main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
