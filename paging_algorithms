@@ -391,3 +391,31 @@ style.map('TButton', background=[('active', highlight_color)])
 main_frame = ttk.Frame(root)
 main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
+ Left panel - Input section
+left_frame = ttk.Frame(main_frame)
+left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+# Number of Frames
+ttk.Label(left_frame, text="NUMBER OF FRAMES").pack(pady=(0, 5))
+capacity_entry = ttk.Entry(left_frame)
+capacity_entry.pack(pady=(0, 15), fill=tk.X)
+
+# Generate Random String
+ttk.Label(left_frame, text="LENGTH").pack(pady=(0, 5))
+random_frame = ttk.Frame(left_frame)
+random_frame.pack(fill=tk.X, pady=(0, 15))
+random_length_entry = ttk.Entry(random_frame, width=10)
+random_length_entry.pack(side=tk.LEFT, padx=(0, 10))
+ttk.Button(random_frame, text="GENERATE", command=generate_random_pages).pack(side=tk.LEFT)
+
+# Page Reference String
+ttk.Label(left_frame, text="REFERENCE STRING").pack(pady=(0, 5))
+pages_entry = ttk.Entry(left_frame)
+pages_entry.pack(pady=(0, 15), fill=tk.X)
+
+# Algorithm Selection
+ttk.Label(left_frame, text="SELECT PAGE REPLACEMENT ALGORITHM").pack(pady=(0, 5))
+algo_var = tk.StringVar(value="FIFO")
+algo_dropdown = ttk.Combobox(left_frame, textvariable=algo_var,
+                           values=["FIFO", "LRU", "Optimal", "Random"])
+algo_dropdown.pack(pady=(0, 20), fill=tk.X)
