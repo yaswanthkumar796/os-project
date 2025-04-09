@@ -419,3 +419,31 @@ algo_var = tk.StringVar(value="FIFO")
 algo_dropdown = ttk.Combobox(left_frame, textvariable=algo_var,
                            values=["FIFO", "LRU", "Optimal", "Random"])
 algo_dropdown.pack(pady=(0, 20), fill=tk.X)
+
+
+
+# Swap Memory
+swap_memory_frame = ttk.Frame(left_frame)
+swap_memory_frame.pack(fill=tk.X, pady=(0, 10))
+ttk.Label(swap_memory_frame, text="SWAP MEMORY").pack()
+
+# Swap Memory text box
+swap_memory_text = tk.Text(swap_memory_frame, height=2, width=30, font=('Consolas', 10),
+                           bg="#2A2A4E", fg=text_color, wrap=tk.WORD,
+                           padx=10, pady=10, insertbackground=accent_color,
+                           selectbackground=highlight_color)
+swap_memory_text.pack(fill=tk.X, expand=True)
+swap_memory_text.insert(tk.END, "SWAP MEMORY: N/A")
+
+# Action Buttons
+ttk.Button(left_frame, text="RUN ALGORITHM", command=run_algorithm).pack(fill=tk.X, pady=5)
+
+# Right panel - Output section
+right_frame = ttk.Frame(main_frame)
+right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+# Compare and Show Graphs Buttons
+action_frame = ttk.Frame(right_frame)
+action_frame.pack(fill=tk.X, pady=(0, 10))
+ttk.Button(action_frame, text="COMPARE", command=compare_algorithms).pack(side=tk.LEFT, padx=(0, 5))
+ttk.Button(action_frame, text="SHOW GRAPHS", command=show_graphs).pack(side=tk.LEFT)
