@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Page Replacement Algorithms</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <style>
+    body {
+      background-image: url('bg1.jpg'); /* Dark background image */
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    .bg-overlay {
+      background-color: rgba(17, 24, 39, 0.9); /* dark overlay */
+    }
+  </style>
+</head>
+<body class="dark min-h-screen text-white transition-all duration-500">
+
+      <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="bg-overlay rounded-2xl p-10 max-w-4xl w-full shadow-2xl">
+          
+          <!-- Button aligned to top-right -->
+          <div class="flex justify-end">
+            <a href="home.html" class="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg transition hover:scale-105">
+              Back to Home
+            </a>
+          </div>
+      <h1 class="text-4xl font-bold text-center mb-10 text-blue-400 tracking-widest">
+        Page Replacement Algorithms
+      </h1>
+
+      <section class="mb-12">
+        <h2 class="text-3xl font-semibold text-purple-400 mb-4">1. FIFO (First-In First-Out)</h2>
+        <p class="mb-4">
+          FIFO replaces the oldest page in memory first. It functions like a queue, removing the first loaded page.
+        </p>
+        <p class="mb-2 font-semibold">Steps:</p>
+        <ul class="list-disc list-inside space-y-2 text-gray-300">
+          <li>Maintain a queue of loaded pages.</li>
+          <li>On page fault, remove the oldest page (front of the queue).</li>
+          <li>Insert the new page at the end of the queue.</li>
+        </ul>
+        <p class="mt-4 font-semibold">Formula:</p>
+        <p class="italic text-gray-300">Page Fault Rate = Page Faults / Total Requests</p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-3xl font-semibold text-green-400 mb-4">2. LRU (Least Recently Used)</h2>
+        <p class="mb-4">
+          LRU replaces the page that has not been used for the longest time, assuming it won’t be used soon.
+        </p>
+        <p class="mb-2 font-semibold">Steps:</p>
+        <ul class="list-disc list-inside space-y-2 text-gray-300">
+          <li>Track page usage history.</li>
+          <li>Remove the least recently used page on a fault.</li>
+          <li>Add the new page and update usage.</li>
+        </ul>
+        <p class="mt-4 font-semibold">Tip:</p>
+        <p class="italic text-gray-300">Can be implemented using a stack or timestamps.</p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-3xl font-semibold text-yellow-400 mb-4">3. Optimal Page Replacement</h2>
+        <p class="mb-4">
+          This algorithm replaces the page that won’t be used for the longest time in the future — giving the best results theoretically.
+        </p>
+        <p class="mb-2 font-semibold">Steps:</p>
+        <ul class="list-disc list-inside space-y-2 text-gray-300">
+          <li>Check all future page references.</li>
+          <li>Replace the page with the farthest next use.</li>
+          <li>Insert the new page in memory.</li>
+        </ul>
+        <p class="mt-4 font-semibold">Note:</p>
+        <p class="italic text-gray-300">Used mostly for comparison since future access is unknown in real-time systems.</p>
+      </section>
+
+      <footer class="text-center text-sm text-gray-400 mt-16">
+        © 2025 Page Replacement Simulator. All rights reserved.
+      </footer>
+    </div>
+  </div>
+
+</body>
+</html>

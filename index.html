@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Modern Page Replacement Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    };
+  </script>
+  <style>
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="dark:bg-gray-950 bg-gradient-to-r from-blue-100 to-purple-200 dark:from-gray-800 dark:to-gray-900 min-h-screen text-gray-900 dark:text-white">
+  <div class="container mx-auto px-6 py-12">
+    <div class="flex flex-col gap-6">
+      <!-- Header and Mode Switch -->
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 class="text-4xl font-bold tracking-widest text-blue-700 dark:text-blue-400">Page Replacement Simulator</h1>
+        <div class="flex gap-4">
+          <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl hover:scale-105 transition">🌙 / ☀️</button>
+          <button onclick="toggleMode()" id="modeToggle" class="bg-pink-400 hover:bg-pink-500 text-white px-4 py-2 rounded-xl transition hover:scale-105">Mode: Direct 🔁</button>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="grid md:grid-cols-2 gap-6 bg-white/30 dark:bg-gray-700/30 backdrop-blur-md p-6 rounded-2xl shadow-xl">
+        <div>
+          <label class="font-semibold">Page Reference String</label>
+          <input id="pageString" type="text" placeholder="e.g. 7 0 1 2 0 3 0 4"
+                 class="w-full p-3 mt-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+        <div>
+          <label class="font-semibold">Number of Frames</label>
+          <input id="frameCount" type="number" min="1" placeholder="e.g. 3"
+                 class="w-full p-3 mt-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+      </div>
+
+      <!-- Algorithm Buttons + Next Step -->
+      <div class="flex flex-wrap justify-center gap-4">
+        <button onclick="run('FIFO')" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">FIFO</button>
+        <button onclick="run('LRU')" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">LRU</button>
+        <button onclick="run('Optimal')" class="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">Optimal</button>
+        <button id="nextStepBtn" onclick="nextStep()" class="hidden bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-6 rounded-xl transition hover:scale-105">Next Step ⏭️</button>
+      </div>
+
+      <!-- Memory Frames and Output -->
+      <div id="visualizer" class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white/40 dark:bg-gray-700/40 p-4 rounded-xl">
+          <h2 class="text-lg font-bold mb-2">Memory Frames:</h2>
+          <div id="frameView" class="flex gap-2 flex-wrap"></div>
+        </div>
+        <div class="bg-white/40 dark:bg-gray-700/40 p-4 rounded-xl">
+          <h2 class="text-lg font-bold mb-2">Progress:</h2>
+          <pre id="result" class="text-sm font-mono whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let mode = 'direct';
+    let stepIndex = 0;
+    let currentSteps = [], currentFrames = [], currentAlgorithm = '';
+
+    function toggleMode() {
+      mode = mode === 'direct' ? 'step' : 'direct';
+      document.getElementById('modeToggle').innerText = `Mode: ${mode === 'direct' ? 'Direct 🔁' : 'Step-by-Step ⏭️'}`;
+      document.getElementById('nextStepBtn').classList.add('hidden');
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function getInput() {
+      const pages = document.getElementById('pageString').value.trim().split(/\s+/).map(Number);
+      const frames = parseInt(document.getElementById('frameCount').value);
+      return { pages, frames };
+    }
+
+    function displayMemory(memory) {
+      const view = document.getElementById('frameView');
+      view.innerHTML = '';
+      memory.forEach(m => {
+        const box = document.createElement('div');
+        box.className = 'bg-blue-100 dark:bg-blue-900 text-center px-4 py-2 rounded-xl shadow text-blue-900 dark:text-white font-bold';
+        box.innerText = m;
+        view.appendChild(box);
+      });
+    }
+
+    function displayResult(index) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerText = currentSteps.slice(0, index + 1).join('\n');
+      displayMemory(currentFrames[index]);
+    }
+
+    function nextStep() {
+      if (stepIndex < currentSteps.length - 1) {
+        stepIndex++;
+        displayResult(stepIndex);
+      }
+    }
+
+    function run(algo) {
+      const { pages, frames } = getInput();
+      let memory = [], steps = [], memSnapshots = [], faults = 0;
+
+      pages.forEach((page, i) => {
+        let action = '', snapshot = [...memory];
+        if (!memory.includes(page)) {
+          if (algo === 'LRU' && memory.length >= frames) memory.shift();
+          else if (algo === 'FIFO' && memory.length >= frames) memory.shift();
+          else if (algo === 'Optimal' && memory.length >= frames) {
+            const future = pages.slice(i + 1);
+            const indexes = memory.map(x => future.indexOf(x) === -1 ? Infinity : future.indexOf(x));
+            const replaceIndex = indexes.indexOf(Math.max(...indexes));
+            memory[replaceIndex] = page;
+          } else if (memory.length < frames) {
+            memory.push(page);
+          } else {
+            memory.shift();
+            memory.push(page);
+          }
+          if (!memory.includes(page)) memory.push(page);
+          faults++;
+          action = `❌ Miss → `;
+        } else {
+          if (algo === 'LRU') {
+            memory.splice(memory.indexOf(page), 1);
+            memory.push(page);
+          }
+          action = `✅ Hit  → `;
+        }
+        snapshot = [...memory];
+        steps.push(`[${i}] ${action}${snapshot.join(' | ')}`);
+        memSnapshots.push(snapshot);
+      });
+
+      currentSteps = steps;
+      currentFrames = memSnapshots;
+      currentAlgorithm = algo;
+      stepIndex = 0;
+
+      if (mode === 'direct') {
+        document.getElementById('nextStepBtn').classList.add('hidden');
+        displayResult(currentSteps.length - 1);
+      } else {
+        document.getElementById('nextStepBtn').classList.remove('hidden');
+        displayResult(0);
+      }
+    }
+  </script>
+</body>
+</html>
