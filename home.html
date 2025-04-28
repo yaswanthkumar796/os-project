@@ -4,61 +4,241 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Page Replacement Simulator</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Global Styles */
+    body {
+      background-image: url('bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      scroll-behavior: smooth;
+    }
+
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.7);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0 1rem;
+    }
+
+    /* Header Styles */
+    header {
+      padding: 1.5rem 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10;
+    }
+
+    button {
+      background-color: #4b5563;
+      color: #ffffff;
+      font-weight: 500;
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border: none;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      background-color: #374151;
+    }
+
+    .blue-button {
+      background-color: #2563eb;
+    }
+
+    .blue-button:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* Hero Section Styles */
+    section {
+      padding: 6rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: -2rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.1em;
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+      color: #ffffff;
+    }
+
+    p {
+      font-size: 1.125rem;
+      margin-bottom: 2.5rem;
+      max-width: 48rem;
+      line-height: 1.6;
+    }
+
+    .hero-button {
+      background-color: #3b82f6;
+      color: #ffffff;
+      font-weight: 600;
+      padding: 1rem 2rem;
+      font-size: 1.25rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, background-color 0.3s ease;
+      border: none;
+      text-transform: uppercase;
+    }
+
+    .hero-button:hover {
+      background-color: #2563eb;
+      transform: scale(1.05);
+    }
+
+    /* Footer Section Styles */
+    footer {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 3rem 1.5rem;
+      margin-top: 2.5rem;
+      text-align: center;
+    }
+
+    footer div {
+      max-width: 64rem;
+      margin-left: auto;
+      margin-right: auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    /* Footer Content Boxes */
+    footer div > div {
+      background: #2d3748;
+      border-radius: 0.75rem;
+      padding: 1rem; /* Reduced padding */
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      max-width: 250px; /* Further reduced box size */
+      margin: 0 auto;
+      margin-bottom: 1rem; /* Space between the boxes */
+    }
+
+    /* Hover Effect for Footer Boxes */
+    footer div > div:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      background-color: red; /* Greenish color */
+    }
+
+    footer div > div h2 {
+      font-size: 1.25rem; /* Adjusted font size */
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+
+    footer div > div p {
+      font-size: 0.875rem; /* Smaller font size */
+      color: #d1d5db;
+      line-height: 1.5;
+      margin-bottom: 1rem; /* Space below the description */
+      max-width: 220px; /* Ensure text fits well */
+    }
+
+    /* Footer Text Adjustments */
+    .footer-text {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #9ca3af;
+      font-size: 1rem;
+      margin-top: 2rem;
+      padding: 1.5rem 0;
+    }
+
+    /* Responsive Grid Layout for Footer */
+    @media (min-width: 768px) {
+      footer div {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      footer div > div {
+        padding: 2.5rem;
+      }
+    }
+
+    /* Animation for smooth appearance */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
-<body class="bg-cover bg-center text-white" style="background-image: url('bg.jpg');">
-
-  <!-- Overlay -->
-  <div class="bg-black bg-opacity-70 min-h-screen flex flex-col justify-between">
-
-    <!-- Top Navigation Buttons -->
-    <header class="flex justify-end p-6 space-x-4">
+<body>
+  <div class="overlay">
+    <!-- Header Section -->
+    <header>
       <a href="about.html">
-        <button class="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-5 rounded-xl shadow-md transition-all duration-300">
-          About
-        </button>
+        <button>About</button>
       </a>
       <a href="index.html">
-        <button class="bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-5 rounded-xl shadow-md transition-all duration-300">
-          Simulator
-        </button>
+        <button class="blue-button">Simulator</button>
       </a>
     </header>
 
     <!-- Hero Section -->
-    <section class="flex flex-col items-center justify-center text-center px-6 py-24">
-      <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-widest">Welcome to Page Replacement Simulator</h1>
-      <br><br>
-      <p class="text-lg md:text-xl mb-10 max-w-2xl">
-        Visualize and understand various page replacement algorithms like FIFO, LRU, and Optimal with ease. Click below to start the simulation!
-      </p>
+    <section>
+      <h1>Welcome to Page Replacement Simulator</h1>
+      <p>Visualize and understand various page replacement algorithms like FIFO, LRU, and Optimal with ease. Click below to start the simulation!</p>
       <a href="index.html">
-        <button class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-8 text-xl rounded-2xl shadow-lg transition-transform transform hover:scale-105">
-          Start Simulation
-        </button>
+        <button class="hero-button">Start Simulation</button>
       </a>
     </section>
 
     <!-- Footer Section -->
-    <footer class="bg-black bg-opacity-80 py-12 px-6 mt-10">
-      <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+    <footer>
+      <div>
         <div>
-          <h2 class="text-2xl font-bold mb-2">FIFO (First-In-First-Out)</h2>
-          <p class="text-sm text-gray-300">Replaces the oldest page in memory. Simple but can lead to poor performance in some cases.</p>
+          <h2>FIFO (First-In-First-Out)</h2>
+          <p>FIFO is the simplest page replacement algorithm that replaces the oldest page in memory. It is easy to implement but can lead to suboptimal performance, especially when the oldest page is still frequently used.</p>
         </div>
         <div>
-          <h2 class="text-2xl font-bold mb-2">LRU (Least Recently Used)</h2>
-          <p class="text-sm text-gray-300">Replaces the page that hasn't been used for the longest time. More accurate but requires tracking usage.</p>
+          <h2>LRU (Least Recently Used)</h2>
+          <p>LRU keeps track of the most recently used pages and replaces the one that hasn't been used for the longest time. It improves performance over FIFO but requires additional tracking of page usage.</p>
         </div>
         <div>
-          <h2 class="text-2xl font-bold mb-2">Optimal</h2>
-          <p class="text-sm text-gray-300">Replaces the page that will not be used for the longest time in the future. Best case but not practical in real systems.</p>
+          <h2>Optimal</h2>
+          <p>The Optimal page replacement algorithm replaces the page that will not be used for the longest time in the future. While this provides the best possible performance, it is not practical in real systems as it requires knowledge of future page requests.</p>
         </div>
       </div>
-      <div class="text-center text-gray-400 mt-10 text-sm">© 2025 Page Replacement Simulator. All rights reserved.</div>
+      <div class="footer-text">© 2025 Page Replacement Simulator. All rights reserved.</div>
     </footer>
-
   </div>
-
 </body>
 </html>
