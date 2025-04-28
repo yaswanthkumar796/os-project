@@ -1,165 +1,666 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Modern Page Replacement Simulator</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-    };
-  </script>
-  <style>
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-</head>
-<body class="dark:bg-gray-950 bg-gradient-to-r from-blue-100 to-purple-200 dark:from-gray-800 dark:to-gray-900 min-h-screen text-gray-900 dark:text-white">
-  <div class="container mx-auto px-6 py-12">
-    <div class="flex flex-col gap-6">
-      <!-- Header and Mode Switch -->
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 class="text-4xl font-bold tracking-widest text-blue-700 dark:text-blue-400">Page Replacement Simulator</h1>
-        <div class="flex gap-4">
-          <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl hover:scale-105 transition">🌙 / ☀️</button>
-          <button onclick="toggleMode()" id="modeToggle" class="bg-pink-400 hover:bg-pink-500 text-white px-4 py-2 rounded-xl transition hover:scale-105">Mode: Direct 🔁</button>
-        </div>
-      </div>
-
-      <!-- Inputs -->
-      <div class="grid md:grid-cols-2 gap-6 bg-white/30 dark:bg-gray-700/30 backdrop-blur-md p-6 rounded-2xl shadow-xl">
-        <div>
-          <label class="font-semibold">Page Reference String</label>
-          <input id="pageString" type="text" placeholder="e.g. 7 0 1 2 0 3 0 4"
-                 class="w-full p-3 mt-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-        <div>
-          <label class="font-semibold">Number of Frames</label>
-          <input id="frameCount" type="number" min="1" placeholder="e.g. 3"
-                 class="w-full p-3 mt-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-400" />
-        </div>
-      </div>
-
-      <!-- Algorithm Buttons + Next Step -->
-      <div class="flex flex-wrap justify-center gap-4">
-        <button onclick="run('FIFO')" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">FIFO</button>
-        <button onclick="run('LRU')" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">LRU</button>
-        <button onclick="run('Optimal')" class="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">Optimal</button>
-        <button id="nextStepBtn" onclick="nextStep()" class="hidden bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-6 rounded-xl transition hover:scale-105">Next Step ⏭️</button>
-      </div>
-
-      <!-- Memory Frames and Output -->
-      <div id="visualizer" class="grid md:grid-cols-2 gap-6">
-        <div class="bg-white/40 dark:bg-gray-700/40 p-4 rounded-xl">
-          <h2 class="text-lg font-bold mb-2">Memory Frames:</h2>
-          <div id="frameView" class="flex gap-2 flex-wrap"></div>
-        </div>
-        <div class="bg-white/40 dark:bg-gray-700/40 p-4 rounded-xl">
-          <h2 class="text-lg font-bold mb-2">Progress:</h2>
-          <pre id="result" class="text-sm font-mono whitespace-pre-wrap"></pre>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let mode = 'direct';
-    let stepIndex = 0;
-    let currentSteps = [], currentFrames = [], currentAlgorithm = '';
-
-    function toggleMode() {
-      mode = mode === 'direct' ? 'step' : 'direct';
-      document.getElementById('modeToggle').innerText = `Mode: ${mode === 'direct' ? 'Direct 🔁' : 'Step-by-Step ⏭️'}`;
-      document.getElementById('nextStepBtn').classList.add('hidden');
-    }
-
-    function toggleTheme() {
-      document.documentElement.classList.toggle('dark');
-    }
-
-    function getInput() {
-      const pages = document.getElementById('pageString').value.trim().split(/\s+/).map(Number);
-      const frames = parseInt(document.getElementById('frameCount').value);
-      return { pages, frames };
-    }
-
-    function displayMemory(memory) {
-      const view = document.getElementById('frameView');
-      view.innerHTML = '';
-      memory.forEach(m => {
-        const box = document.createElement('div');
-        box.className = 'bg-blue-100 dark:bg-blue-900 text-center px-4 py-2 rounded-xl shadow text-blue-900 dark:text-white font-bold';
-        box.innerText = m;
-        view.appendChild(box);
-      });
-    }
-
-    function displayResult(index) {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerText = currentSteps.slice(0, index + 1).join('\n');
-      displayMemory(currentFrames[index]);
-    }
-
-    function nextStep() {
-      if (stepIndex < currentSteps.length - 1) {
-        stepIndex++;
-        displayResult(stepIndex);
-      }
-    }
-
-    function run(algo) {
-      const { pages, frames } = getInput();
-      let memory = [], steps = [], memSnapshots = [], faults = 0;
-
-      pages.forEach((page, i) => {
-        let action = '', snapshot = [...memory];
-        if (!memory.includes(page)) {
-          if (algo === 'LRU' && memory.length >= frames) memory.shift();
-          else if (algo === 'FIFO' && memory.length >= frames) memory.shift();
-          else if (algo === 'Optimal' && memory.length >= frames) {
-            const future = pages.slice(i + 1);
-            const indexes = memory.map(x => future.indexOf(x) === -1 ? Infinity : future.indexOf(x));
-            const replaceIndex = indexes.indexOf(Math.max(...indexes));
-            memory[replaceIndex] = page;
-          } else if (memory.length < frames) {
-            memory.push(page);
-          } else {
-            memory.shift();
-            memory.push(page);
-          }
-          if (!memory.includes(page)) memory.push(page);
-          faults++;
-          action = `❌ Miss → `;
-        } else {
-          if (algo === 'LRU') {
-            memory.splice(memory.indexOf(page), 1);
-            memory.push(page);
-          }
-          action = `✅ Hit  → `;
+    <meta charset="UTF-8">
+    <title>Modern Page Replacement Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        };
+    </script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
         }
-        snapshot = [...memory];
-        steps.push(`[${i}] ${action}${snapshot.join(' | ')}`);
-        memSnapshots.push(snapshot);
-      });
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            background-color: #4b5e9b; /* Indigo */
+            transition: background-color 0.3s;
+        }
+        .dark body {
+            background-color: #1a202c; /* Dark mode indigo */
+        }
+        .memory-frame {
+            border: 2px solid #6b7280;
+            padding: 8px;
+            border-radius: 8px;
+            min-width: 50px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .memory-frame.filled {
+            background-color: rgba(99, 102, 241, 0.3);
+            border-color: #6366f1;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(79, 70, 229, 0.4);
+        }
+        /* Horizontal progress bar */
+        .progress-bar-container {
+            background-color: #d1d5db;
+            border-radius: 4px;
+            height: 10px;
+            width: 150px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar {
+            background-color: #6366f1;
+            height: 100%;
+            width: 0%;
+            position: absolute;
+            left: 0;
+            border-radius: 4px;
+            transition: width 0.3s ease-in-out;
+        }
+        .completion-chart-container {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+        .completion-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .algorithm-btn.selected {
+            background-color: #4338ca; /* Deep indigo when selected */
+            transform: scale(1.03);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+        }
+        .control-panel {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #4b5e9b;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        .dark .control-panel {
+            background-color: #1a202c;
+        }
+        .memory-section {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+    </style>
+</head>
+<body class="bg-indigo-900 text-white min-h-screen transition-colors duration-300">
+    <div class="container mx-auto px-6 py-6">
+        <!-- Control Panel -->
+        <div class="control-panel mb-6 rounded-xl bg-indigo-800 shadow-lg p-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 w-full">
+                <div class="flex items-center">
+                    <h1 class="text-4xl font-bold tracking-widest text-blue-300">PAGE SIMULATOR</h1>
+                </div>
+                
+                <!-- Progress Section -->
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm mb-1">Progress</span>
+                        <div class="progress-bar-container">
+                            <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="completion-chart-container">
+                        <canvas id="completionPieChart" width="80" height="80"></canvas>
+                        <div id="completionPercentage" class="completion-percentage">0%</div>
+                    </div>
+                </div>
+                
+                <!-- Controls -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-xl hover:scale-105 transition">🌙/☀️</button>
+                    <button onclick="toggleMode()" id="modeToggle" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl transition hover:scale-105">Mode: Direct 🔁</button>
+                    <button id="nextStepBtn" onclick="nextStep()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl transition hover:scale-105">Next Step ⏭️</button>
+                </div>
+            </div>
+        </div>
 
-      currentSteps = steps;
-      currentFrames = memSnapshots;
-      currentAlgorithm = algo;
-      stepIndex = 0;
+        <div class="flex flex-col items-center gap-6">
+            <!-- Input Section -->
+            <div class="flex flex-col items-center gap-4 bg-indigo-800 p-6 rounded-2xl shadow-lg w-full max-w-4xl">
+                <div class="w-full">
+                    <label class="font-semibold block mb-2">Reference String</label>
+                    <input id="pageString" type="text" placeholder="e.g. 7 0 1 2 0 3 0 4" class="w-full p-3 rounded-xl border border-blue-700 bg-indigo-700 outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div id="generatorSection" class="w-full flex items-center gap-4">
+                    <div class="w-1/2">
+                        <label class="font-semibold block mb-2">Length</label>
+                        <input id="stringLength" type="number" min="1" value="8" placeholder="e.g. 8" class="w-full p-3 rounded-xl border border-blue-700 bg-indigo-700 outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <button onclick="generateReferenceString()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-xl transition hover:scale-105">Generate</button>
+                    <button onclick="switchToManual()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-xl transition hover:scale-105">Switch to Manual</button>
+                </div>
+                <div class="w-full">
+                    <label class="font-semibold block mb-2">No. of Frames</label>
+                    <input id="frameCount" type="number" min="1" value="3" placeholder="e.g. 3" class="w-full p-3 rounded-xl border border-blue-700 bg-indigo-700 outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+            </div>
 
-      if (mode === 'direct') {
-        document.getElementById('nextStepBtn').classList.add('hidden');
-        displayResult(currentSteps.length - 1);
-      } else {
-        document.getElementById('nextStepBtn').classList.remove('hidden');
-        displayResult(0);
-      }
-    }
-  </script>
+            <!-- Algorithm Selection -->
+            <div class="w-full max-w-4xl">
+                <button onclick="showAlgorithmOptions()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-xl w-full transition hover:scale-105" id="algoButton">Choose Algorithm ▼</button>
+                <div id="algoOptions" class="hidden flex flex-col gap-2 mt-2">
+                    <button onclick="selectAlgorithm('FIFO')" class="algorithm-btn bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">FIFO</button>
+                    <button onclick="selectAlgorithm('LRU')" class="algorithm-btn bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">LRU</button>
+                    <button onclick="selectAlgorithm('Optimal')" class="algorithm-btn bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-xl transition hover:scale-105">Optimal</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4">
+                <button onclick="runSelectedAlgorithm()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-xl transition hover:scale-105">RUN</button>
+                <button id="resetBtn" onclick="resetSimulation()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-xl transition hover:scale-105">RESET</button>
+            </div>
+
+            <!-- Memory Frames -->
+            <div class="w-full max-w-4xl bg-indigo-800 p-4 rounded-xl shadow-lg">
+                <h2 class="text-lg font-bold mb-2">Memory Frames</h2>
+                <div id="memoryDisplay" class="flex gap-4 items-center justify-center py-3">
+                    <!-- Memory frames will be generated here -->
+                </div>
+            </div>
+
+            <!-- Results Grid - Now in two columns -->
+            <div class="results-grid w-full max-w-4xl">
+                <div class="bg-indigo-800 p-4 rounded-xl shadow-lg">
+                    <h2 class="text-lg font-bold mb-2">Hit-Miss Ratio</h2>
+                    <pre id="hitMissRatio" class="text-sm font-mono whitespace-pre-wrap"></pre>
+                </div>
+                <div class="bg-indigo-800 p-4 rounded-xl shadow-lg">
+                    <h2 class="text-lg font-bold mb-2">Swap Memory</h2>
+                    <pre id="swapMemory" class="text-sm font-mono whitespace-pre-wrap"></pre>
+                </div>
+            </div>
+
+            <!-- Output Section - Below Results Grid -->
+            <div class="w-full max-w-4xl bg-indigo-800 p-4 rounded-xl shadow-lg">
+                <h2 class="text-lg font-bold mb-2">Output</h2>
+                <pre id="result" class="text-sm font-mono whitespace-pre-wrap h-40 overflow-y-auto"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'generator';
+        let selectedAlgorithm = '';
+        let mode = 'direct';
+        let stepIndex = 0;
+        let currentSteps = [];
+        let currentFrames = [];
+        let currentAlgorithm = '';
+        let totalPages = 0;
+        let stepsData = [];
+        let chart;
+        let pagesArray = [];
+        let numFrames = 0;
+        // Audio context for more reliable beep sound
+        let audioContext = null;
+
+        // Initialize audio context when user interacts with the page
+        document.addEventListener('click', function initAudioContext() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (error) {
+                console.log("Audio context initialization failed:", error);
+            }
+        }, { once: true });
+
+        function showAlgorithmOptions() {
+            var options = document.getElementById('algoOptions');
+            options.classList.toggle('hidden');
+            var button = document.getElementById('algoButton');
+            if (options.classList.contains('hidden')) {
+                button.textContent = 'Choose Algorithm ▼';
+            } else {
+                button.textContent = 'Choose Algorithm ▲';
+            }
+        }
+
+        function selectAlgorithm(algo) {
+            selectedAlgorithm = algo;
+        
+            // Update UI to show selected algorithm
+            var buttons = document.querySelectorAll('.algorithm-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('selected');
+            }
+            
+            var allButtons = document.querySelectorAll('.algorithm-btn');
+            for (var btn of allButtons) {
+                if (btn.innerText === algo) {
+                    btn.classList.add('selected');
+                }
+            }
+            
+            document.getElementById('algoButton').textContent = 'Algorithm: ' + algo + ' ▼';
+            
+            // Hide algorithm options after selection
+            document.getElementById('algoOptions').classList.add('hidden');
+        }
+
+        function switchToManual() {
+            currentMode = 'manual';
+            document.getElementById('generatorSection').style.display = 'none';
+            
+            // Add manual mode button if it doesn't exist
+            if (!document.querySelector('button[onclick="switchToGenerator()"]')) {
+                var manualButton = document.createElement('button');
+                manualButton.innerText = 'Switch to Generator';
+                manualButton.onclick = function() { switchToGenerator(); };
+                manualButton.className = 'bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-xl transition hover:scale-105';
+                document.querySelector('.flex.gap-4').appendChild(manualButton);
+            }
+        }
+
+        function switchToGenerator() {
+            currentMode = 'generator';
+            document.getElementById('generatorSection').style.display = 'flex';
+            
+            // Remove manual mode button
+            var manualButtons = Array.from(document.querySelectorAll('button')).filter(function(btn) {
+                return btn.innerText === 'Switch to Generator';
+            });
+            manualButtons.forEach(function(btn) {
+                btn.remove();
+            });
+        }
+
+        function generateReferenceString() {
+            var length = parseInt(document.getElementById('stringLength').value);
+            if (length && length > 0) {
+                var pages = Array.from({  length }, function() {
+                    return Math.floor(Math.random() * 10);
+                });
+                document.getElementById('pageString').value = pages.join(' ');
+            } else {
+                alert('Please enter a valid length.');
+            }
+        }
+
+        function toggleMode() {
+            mode = mode === 'direct' ? 'step' : 'direct';
+            document.getElementById('modeToggle').innerText = 'Mode: ' + (mode === 'direct' ? 'Direct 🔁' : 'Step-by-Step ⏭️');
+            document.getElementById('nextStepBtn').style.display = mode === 'direct' ? 'none' : 'block';
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function getInput() {
+            var pageInput = document.getElementById('pageString').value.trim();
+            if (!pageInput) {
+                alert('Please enter a reference string or generate one.');
+                return { pages: [], frames: 0 };
+            }
+            
+            var pages = pageInput.split(/\s+/).map(function(num) {
+                return Number(num);
+            });
+            var frames = parseInt(document.getElementById('frameCount').value);
+            
+            if (!frames || frames <= 0) {
+                alert('Please enter a valid number of frames.');
+                return { pages: [], frames: 0 };
+            }
+            
+            return { pages: pages, frames: frames };
+        }
+
+        function displayMemory(memory) {
+            var memoryDisplay = document.getElementById('memoryDisplay');
+            memoryDisplay.innerHTML = '';
+            var frameCount = parseInt(document.getElementById('frameCount').value);
+            
+            for (var i = 0; i < frameCount; i++) {
+                var frame = document.createElement('div');
+                frame.classList.add('memory-frame');
+                
+                if (memory[i] !== undefined) {
+                    frame.classList.add('filled');
+                    frame.innerText = memory[i];
+                } else {
+                    frame.innerText = 'Empty';
+                }
+                
+                memoryDisplay.appendChild(frame);
+            }
+        }
+
+        function updateProgressBar(progress) {
+            // Update for horizontal progress bar
+            var progressBar = document.getElementById('progressBar');
+            progressBar.style.width = progress + '%';
+        }
+
+        function playBeep() {
+            // More reliable beep sound implementation
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (error) {
+                    console.log("Audio context initialization failed:", error);
+                    return;
+                }
+            }
+            
+            try {
+                var oscillator = audioContext.createOscillator();
+                var gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.1;
+                
+                oscillator.start();
+                
+                // Using timeout to stop the sound
+                setTimeout(function() {
+                    try {
+                        oscillator.stop();
+                    } catch (e) {
+                        console.log("Error stopping oscillator:", e);
+                    }
+                }, 100);
+            } catch (error) {
+                console.log("Audio playback failed:", error);
+            }
+        }
+
+        function updateCompletionChart(completedSteps, totalSteps) {
+            var percentage = totalSteps === 0 ? 0 : Math.round((completedSteps / totalSteps) * 100);
+            document.getElementById('completionPercentage').innerText = percentage + '%';
+
+            var ctx = document.getElementById('completionPieChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [percentage, 100 - percentage],
+                        backgroundColor: ['#ec4899', '#d1d5db'],
+                        borderWidth: 2,
+                        borderColor: '#ec4899'
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: false,
+                    plugins: {
+                        tooltip: {
+                            enabled: false
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    animation: {
+                        duration: 500
+                    }
+                }
+            });
+        }
+
+        function displayResult(steps, faults) {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerText = '🔸 Page Faults: ' + faults + '\n\n📘 Steps:\n' + steps.join('\n');
+            
+            if (mode === 'step') {
+                stepIndex = 0;
+                currentSteps = steps;
+                totalPages = pagesArray.length;
+                displayResultStep(0);
+            } else {
+                updateProgressBar(100);
+                updateCompletionChart(pagesArray.length, pagesArray.length);
+            }
+        }
+
+        function displayResultStep(index) {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerText = '🔸 Page Faults: ' + currentSteps.slice(0, index + 1).filter(function(s) {
+                return s.includes('❌');
+            }).length + '\n\n📘 Steps:\n' + currentSteps.slice(0, index + 1).join('\n');
+            
+            if (stepsData[index]) {
+                displayMemory(stepsData[index].memory);
+                updateProgressBar(Math.round(((index + 1) / totalPages) * 100));
+                updateCompletionChart(index + 1, totalPages);
+                playBeep();
+            }
+        }
+
+        function nextStep() {
+            if (stepIndex < currentSteps.length - 1) {
+                stepIndex++;
+                displayResultStep(stepIndex);
+            }
+        }
+
+        function displayHitMissRatio(total, faults, algorithm) {
+            var hits = total - faults;
+            var hitRatio = ((hits / total) * 100).toFixed(2);
+            var missRatio = ((faults / total) * 100).toFixed(2);
+            
+            var ratioDiv = document.getElementById('hitMissRatio');
+            ratioDiv.innerHTML = '<div class="mb-2"> 📊 ' + algorithm + ' Hit/Miss Ratio:</div>' +
+                                '<div class="flex gap-2 mb-1">' +
+                                    '<div class="w-24">Hit Ratio:</div>' +
+                                    '<div class="font-bold">' + hitRatio + '%</div>' +
+                                '</div>' +
+                                '<div class="flex gap-2">' +
+                                    '<div class="w-24">Miss Ratio:</div>' +
+                                    '<div class="font-bold">' + missRatio + '%</div>' +
+                                '</div>';
+        }
+
+        function displaySwapMemory(swapLog) {
+            var swapDiv = document.getElementById('swapMemory');
+            swapDiv.innerText = '📦 Swapped Pages:\n' + (swapLog.join('\n') || 'No swaps recorded.');
+        }
+
+        // FIFO Algorithm
+        let fifoMemory = [];
+        let fifoFaults = 0;
+        let fifoSteps = [];
+        let fifoSwapLog = [];
+        function runFIFO(pages, frames) {
+            fifoMemory = [];
+            fifoFaults = 0;
+            fifoSteps = [];
+            fifoSwapLog = [];
+            stepsData = [];
+            stepIndex = 0;
+
+            for (var i = 0; i < pages.length; i++) {
+                var page = pages[i];
+                var memoryState = fifoMemory.slice(0);
+                var fault = false;
+                
+                if (!fifoMemory.includes(page)) {
+                    fault = true;
+                    if (fifoMemory.length >= frames) {
+                        var swappedOut = fifoMemory.shift();
+                        fifoSwapLog.push('Swapped out: ' + swappedOut);
+                    }
+                    fifoMemory.push(page);
+                    fifoFaults++;
+                }
+                
+                fifoSteps.push('[' + i + '] Page ' + page + ': ' + (fault ? '❌ Miss' : '✅ Hit') + ' → ' + fifoMemory.join(' | '));
+                stepsData.push({ step: i, memory: fifoMemory.slice(0), fault: fault });
+            }
+
+            return { steps: fifoSteps, faults: fifoFaults, swapLog: fifoSwapLog };
+        }
+
+        // LRU Algorithm
+        let lruMemory = [];
+        let lruFaults = 0;
+        let lruSteps = [];
+        let lruSwapLog = [];
+        function runLRU(pages, frames) {
+            lruMemory = [];
+            lruFaults = 0;
+            lruSteps = [];
+            lruSwapLog = [];
+            stepsData = [];
+            stepIndex = 0;
+
+            for (var i = 0; i < pages.length; i++) {
+                var page = pages[i];
+                var memoryState = lruMemory.slice(0);
+                var fault = false;
+                
+                if (!lruMemory.includes(page)) {
+                    fault = true;
+                    if (lruMemory.length >= frames) {
+                        var swappedOut = lruMemory.shift();
+                        lruSwapLog.push('Swapped out: ' + swappedOut);
+                    }
+                    lruMemory.push(page);
+                    lruFaults++;
+                } else {
+                    lruMemory.splice(lruMemory.indexOf(page), 1);
+                    lruMemory.push(page);
+                }
+                
+                lruSteps.push('[' + i + '] Page ' + page + ': ' + (fault ? '❌ Miss' : '✅ Hit') + ' → ' + lruMemory.join(' | '));
+                stepsData.push({ step: i, memory: lruMemory.slice(0), fault: fault });
+            }
+
+            return { steps: lruSteps, faults: lruFaults, swapLog: lruSwapLog };
+        }
+
+        // Optimal Algorithm
+        let optMemory = [];
+        let optFaults = 0;
+        let optSteps = [];
+        let optSwapLog = [];
+        function runOptimal(pages, frames) {
+            optMemory = [];
+            optFaults = 0;
+            optSteps = [];
+            optSwapLog = [];
+            stepsData = [];
+            stepIndex = 0;
+
+            for (var i = 0; i < pages.length; i++) {
+                var page = pages[i];
+                var memoryState = optMemory.slice(0);
+                var fault = false;
+                
+                if (!optMemory.includes(page)) {
+                    fault = true;
+                    if (optMemory.length >= frames) {
+                        var future = pages.slice(i + 1);
+                        var indexes = optMemory.map(function(x) {
+                            return future.indexOf(x) === -1 ? Infinity : future.indexOf(x);
+                        });
+                        var replaceIndex = indexes.indexOf(Math.max.apply(null, indexes));
+                        var swappedOut = optMemory[replaceIndex];
+                        optSwapLog.push('Swapped out: ' + swappedOut);
+                        optMemory[replaceIndex] = page;
+                    } else {
+                        optMemory.push(page);
+                    }
+                    optFaults++;
+                }
+                
+                optSteps.push('[' + i + '] Page ' + page + ': ' + (fault ? '❌ Miss' : '✅ Hit') + ' → ' + optMemory.join(' | '));
+                stepsData.push({ step: i, memory: optMemory.slice(0), fault: fault });
+            }
+
+            return { steps: optSteps, faults: optFaults, swapLog: optSwapLog };
+        }
+
+        function run(algo) {
+            var input = getInput();
+            
+            if (input.pages.length === 0 || input.frames === 0) {
+                return; // Validation failed
+            }
+            
+            pagesArray = input.pages;
+            numFrames = input.frames;
+            currentAlgorithm = algo;
+            
+            var result;
+            if (algo === 'FIFO') {
+                result = runFIFO(pagesArray, numFrames);
+            } else if (algo === 'LRU') {
+                result = runLRU(pagesArray, numFrames);
+            } else if (algo === 'Optimal') {
+                result = runOptimal(pagesArray, numFrames);
+            }
+
+            displayResult(result.steps, result.faults);
+            displayHitMissRatio(pagesArray.length, result.faults, algo);
+            displaySwapMemory(result.swapLog);
+
+            if (mode === 'step' && pagesArray.length > 0) {
+                stepIndex = 0;
+                displayResultStep(0);
+            } else if (mode === 'direct' && pagesArray.length > 0) {
+                displayMemory(algo === 'FIFO' ? fifoMemory : algo === 'LRU' ? lruMemory : optMemory);
+            }
+        }
+
+        function runSelectedAlgorithm() {
+            if (selectedAlgorithm) {
+                run(selectedAlgorithm);
+            } else {
+                alert('Please select an algorithm first!');
+            }
+        }
+
+        function resetSimulation() {
+            // Reset all state
+            stepIndex = 0;
+            currentSteps = [];
+            stepsData = [];
+            totalPages = 0;
+            
+            // Reset UI
+            document.getElementById('result').innerText = '';
+            document.getElementById('hitMissRatio').innerText = '';
+            document.getElementById('swapMemory').innerText = '';
+            displayMemory([]);
+            updateProgressBar(0);
+            updateCompletionChart(0, 1);
+        }
+
+        // Initial setup
+        window.onload = function() {
+            generateReferenceString();
+            displayMemory([]);
+            updateCompletionChart(0, 1); // Initialize pie chart
+            
+            // Initial hiding of next step button if in direct mode
+            document.getElementById('nextStepBtn').style.display = mode === 'direct' ? 'none' : 'block';
+        };
+    </script>
 </body>
 </html>
