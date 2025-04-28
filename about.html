@@ -1,91 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Page Replacement Algorithms</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-    }
-  </script>
   <style>
-    body {
-      background-image: url('bg1.jpg'); /* Dark background image */
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .bg-overlay {
-      background-color: rgba(17, 24, 39, 0.9); /* dark overlay */
+
+    body {
+      min-height: 100vh;
+      background: #0f0c29;
+      background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+      overflow-x: hidden;
+      position: relative;
+      color: #ffffff;
+    }
+
+    .tech-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .tech-bg::before {
+      content: "";
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: url('https://www.transparenttextures.com/patterns/circuit-board.png');
+      opacity: 0.04;
+      animation: scrollBackground 60s linear infinite;
+    }
+
+    @keyframes scrollBackground {
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .card {
+      background-color: rgba(17, 24, 39, 0.95);
+      padding: 2.5rem;
+      border-radius: 1rem;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .back-button {
+      background-color: #facc15;
+      color: #000;
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: bold;
+      float: right;
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      background-color: #e6b800;
+      transform: scale(1.05);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      color: #60a5fa;
+      margin-bottom: 2rem;
+    }
+
+    section {
+      margin-bottom: 2rem;
+      border-left: 4px solid #4b5563;
+      padding-left: 1.5rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+    }
+
+    section h2 {
+      margin-bottom: 1rem;
+      font-size: 1.75rem;
+    }
+
+    section:nth-of-type(1) h2 {
+      color: #a855f7;
+    }
+
+    section:nth-of-type(2) h2 {
+      color: #10b981;
+    }
+
+    section:nth-of-type(3) h2 {
+      color: #f59e0b;
+    }
+
+    ul {
+      list-style: disc;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    .italic {
+      font-style: italic;
+      color: #d1d5db;
+    }
+
+    .font-semibold {
+      font-weight: 600;
+      color: #f9fafb;
+    }
+
+    footer {
+      text-align: center;
+      color: #9ca3af;
+      margin-top: 2rem;
+      font-size: 0.875rem;
     }
   </style>
 </head>
-<body class="dark min-h-screen text-white transition-all duration-500">
+<body>
+  <div class="tech-bg"></div>
+  <div class="container">
+    <div class="card">
+      <a href="home.html" class="back-button">Back to Home</a>
+      <h1>Page Replacement Algorithms</h1>
 
-      <div class="min-h-screen flex items-center justify-center px-4 py-12">
-        <div class="bg-overlay rounded-2xl p-10 max-w-4xl w-full shadow-2xl">
-          
-          <!-- Button aligned to top-right -->
-          <div class="flex justify-end">
-            <a href="home.html" class="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg transition hover:scale-105">
-              Back to Home
-            </a>
-          </div>
-      <h1 class="text-4xl font-bold text-center mb-10 text-blue-400 tracking-widest">
-        Page Replacement Algorithms
-      </h1>
-
-      <section class="mb-12">
-        <h2 class="text-3xl font-semibold text-purple-400 mb-4">1. FIFO (First-In First-Out)</h2>
-        <p class="mb-4">
-          FIFO replaces the oldest page in memory first. It functions like a queue, removing the first loaded page.
-        </p>
-        <p class="mb-2 font-semibold">Steps:</p>
-        <ul class="list-disc list-inside space-y-2 text-gray-300">
+      <section>
+        <h2>1. FIFO (First-In First-Out)</h2>
+        <p>FIFO replaces the oldest page in memory first. It functions like a queue, removing the first loaded page.</p>
+        <p class="font-semibold">Steps:</p>
+        <ul>
           <li>Maintain a queue of loaded pages.</li>
           <li>On page fault, remove the oldest page (front of the queue).</li>
           <li>Insert the new page at the end of the queue.</li>
         </ul>
-        <p class="mt-4 font-semibold">Formula:</p>
-        <p class="italic text-gray-300">Page Fault Rate = Page Faults / Total Requests</p>
+        <p class="font-semibold">Formula:</p>
+        <p class="italic">Page Fault Rate = Page Faults / Total Requests</p>
       </section>
 
-      <section class="mb-12">
-        <h2 class="text-3xl font-semibold text-green-400 mb-4">2. LRU (Least Recently Used)</h2>
-        <p class="mb-4">
-          LRU replaces the page that has not been used for the longest time, assuming it won’t be used soon.
-        </p>
-        <p class="mb-2 font-semibold">Steps:</p>
-        <ul class="list-disc list-inside space-y-2 text-gray-300">
+      <section>
+        <h2>2. LRU (Least Recently Used)</h2>
+        <p>LRU replaces the page that has not been used for the longest time, assuming it won’t be used soon.</p>
+        <p class="font-semibold">Steps:</p>
+        <ul>
           <li>Track page usage history.</li>
           <li>Remove the least recently used page on a fault.</li>
           <li>Add the new page and update usage.</li>
         </ul>
-        <p class="mt-4 font-semibold">Tip:</p>
-        <p class="italic text-gray-300">Can be implemented using a stack or timestamps.</p>
+        <p class="font-semibold">Tip:</p>
+        <p class="italic">Can be implemented using a stack or timestamps.</p>
       </section>
 
-      <section class="mb-12">
-        <h2 class="text-3xl font-semibold text-yellow-400 mb-4">3. Optimal Page Replacement</h2>
-        <p class="mb-4">
-          This algorithm replaces the page that won’t be used for the longest time in the future — giving the best results theoretically.
-        </p>
-        <p class="mb-2 font-semibold">Steps:</p>
-        <ul class="list-disc list-inside space-y-2 text-gray-300">
+      <section>
+        <h2>3. Optimal Page Replacement</h2>
+        <p>This algorithm replaces the page that won’t be used for the longest time in the future — giving the best results theoretically.</p>
+        <p class="font-semibold">Steps:</p>
+        <ul>
           <li>Check all future page references.</li>
           <li>Replace the page with the farthest next use.</li>
           <li>Insert the new page in memory.</li>
         </ul>
-        <p class="mt-4 font-semibold">Note:</p>
-        <p class="italic text-gray-300">Used mostly for comparison since future access is unknown in real-time systems.</p>
+        <p class="font-semibold">Note:</p>
+        <p class="italic">Used mostly for comparison since future access is unknown in real-time systems.</p>
       </section>
 
-      <footer class="text-center text-sm text-gray-400 mt-16">
+      <footer>
         © 2025 Page Replacement Simulator. All rights reserved.
       </footer>
     </div>
   </div>
-
 </body>
 </html>
